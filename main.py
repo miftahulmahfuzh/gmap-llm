@@ -1,3 +1,6 @@
+# gmap-llm/main.py
+# for gmaps tool
+
 import os
 from dotenv import load_dotenv
 import googlemaps
