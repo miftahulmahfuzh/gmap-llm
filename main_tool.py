@@ -1,10 +1,11 @@
-# gmap-llm/main.py
+# gmap-llm/main_tool.py
 # for gmaps tool
 
 import os
 from dotenv import load_dotenv
 import googlemaps
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware  # Add this import
 from pydantic import BaseModel
 from typing import List, Optional
 
@@ -16,6 +17,16 @@ if not API_KEY:
 
 # Initialize FastAPI app and Google Maps client
 app = FastAPI()
+
+# Add CORS middleware - This is the fix!
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # In production, replace with specific origins
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 gmaps = googlemaps.Client(key=API_KEY)
 
 
@@ -49,7 +60,6 @@ def find_places(request: PlaceRequest):
     try:
         # Use the places API to search for the query
         places_result = gmaps.places(query=request.query)
-
         if places_result["status"] != "OK":
             # Handle cases where Google API returns an error (e.g., ZERO_RESULTS)
             return {"status": places_result["status"], "results": []}
@@ -92,3 +102,9 @@ def find_places(request: PlaceRequest):
 @app.get("/")
 def read_root():
     return {"message": "LLM Maps API is running. Use the /find-places endpoint."}
+
+
+# Optional: Add a health check endpoint
+@app.get("/health")
+def health_check():
+    return {"status": "healthy", "message": "API is running normally"}
