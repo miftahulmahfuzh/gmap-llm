@@ -77,6 +77,11 @@ It is highly recommended to use a Python virtual environment.
     ```
     GOOGLE_MAPS_API_KEY="PASTE_YOUR_GOOGLE_MAPS_API_KEY_HERE"
     ```
+3.  Add your Deepseek API key to this file:
+
+    ```
+    DEEPSEEK_API_KEY="PASTE_YOUR_DEEPSEEK_API_KEY_HERE"
+    ```
 
 ---
 
@@ -124,16 +129,14 @@ Then open your browser and navigate to `http://localhost:3000/index.html`.
 
 ```
 gmap-llm/
-├── .env                  # Stores your Google Maps API key
-├── .git/                 # Git repository files
-├── .gitignore           # Git ignore file
-├── cli_app.py           # Command line interface (optional)
+├── .env                 # Stores your GMaps & Deepseek API key
+├── cli_app.py           # Command line interface
 ├── index.html           # The HTML frontend application
 ├── main_tool.py         # The FastAPI backend API
-├── README.md            # This file
+├── README.md            # Comprehensive documentation
 ├── requirements.txt     # List of Python dependencies (create this)
 ├── server.py            # Simple HTTP server for HTML frontend
-├── system_prompt.txt    # AI behavior instructions (for CLI app)
+├── system_prompt.txt    # AI behavior instructions
 └── test_gmaps.py        # Testing utilities
 ```
 
