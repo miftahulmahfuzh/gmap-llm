@@ -26,7 +26,17 @@
 
                 <div class="search-form">
                     <input type="text" id="searchInput" class="search-input" placeholder="What are you looking for? (e.g., best pizza in New York)" />
-                    <button id="searchBtn" class="search-btn" onclick="searchPlaces()">Search</button>
+                    <div class="form-controls">
+                        <select id="topNSelect" class="top-n-select">
+                            <option value="5">Top 5</option>
+                            <option value="10">Top 10</option>
+                            <option value="15">Top 15</option>
+                            <option value="20">Top 20</option>
+                            <option value="30">Top 30</option>
+                            <option value="60">Top 60</option>
+                        </select>
+                        <button id="searchBtn" class="search-btn" onclick="searchPlaces()">Search</button>
+                    </div>
                 </div>
 
                 <div id="searchInfo" class="search-info">
@@ -44,17 +54,30 @@
         </div>
 
         <div id="resultsContainer" class="results-container"></div>
+
+        <div id="paginationContainer" class="pagination-container" style="display: none;">
+            <div class="pagination-info">
+                <span id="paginationInfo">Showing 1-5 of 15 results</span>
+            </div>
+            <div class="pagination-controls">
+                <button id="prevPageBtn" class="pagination-btn" onclick="changePage(-1)" disabled>Previous</button>
+                <div id="pageNumbers" class="page-numbers"></div>
+                <button id="nextPageBtn" class="pagination-btn" onclick="changePage(1)">Next</button>
+            </div>
+        </div>
     </div>
 
     <script>
         const API_BASE_URL = 'http://127.0.0.1:8000';
         let useLLM = false;
         let searchStartTime = 0;
+        let currentPage = 1;
+        let currentPagination = null;
 
-        // Cache for storing results
+        // Cache for storing results with pagination support
         let resultsCache = {
-            standard: {}, // key: query, value: {data, duration, html}
-            llm: {}       // key: query, value: {data, duration, html}
+            standard: {}, // key: "query|topn|page", value: {data, duration, html}
+            llm: {}       // key: "query|topn|page", value: {data, duration, html}
         };
         let currentQuery = '';
 
@@ -64,16 +87,27 @@
             }
         });
 
-        // Clear cache when query changes
+        // Clear cache when query or top_n changes
         document.getElementById('searchInput').addEventListener('input', function(e) {
             const newQuery = e.target.value.trim().toLowerCase();
             if (newQuery !== currentQuery) {
                 currentQuery = newQuery;
-                // Hide results when query changes
-                document.getElementById('resultsContainer').innerHTML = '';
-                document.getElementById('searchInfo').classList.remove('show');
+                clearResults();
             }
         });
+
+        document.getElementById('topNSelect').addEventListener('change', function(e) {
+            if (currentQuery) {
+                clearResults();
+            }
+        });
+
+        function clearResults() {
+            document.getElementById('resultsContainer').innerHTML = '';
+            document.getElementById('searchInfo').classList.remove('show');
+            document.getElementById('paginationContainer').style.display = 'none';
+            currentPage = 1;
+        }
 
         function toggleLLM() {
             useLLM = !useLLM;
@@ -116,9 +150,10 @@
 
         function loadCachedResultsIfAvailable() {
             const query = document.getElementById('searchInput').value.trim();
+            const topN = document.getElementById('topNSelect').value;
             if (!query) return;
 
-            const cacheKey = query.toLowerCase();
+            const cacheKey = `${query.toLowerCase()}|${topN}|${currentPage}`;
             const cache = useLLM ? resultsCache.llm : resultsCache.standard;
 
             if (cache[cacheKey]) {
@@ -132,6 +167,11 @@
                 document.getElementById('searchDuration').textContent = cached.duration;
                 document.getElementById('searchInfo').classList.add('show');
 
+                // Update pagination
+                if (cached.data.pagination) {
+                    updatePagination(cached.data.pagination);
+                }
+
                 // Show query info only for LLM
                 const queryInfo = document.getElementById('queryInfo');
                 if (useLLM && cached.data.original_query && cached.data.processed_query) {
@@ -144,8 +184,8 @@
             }
         }
 
-        function cacheResults(query, data, duration, resultsHtml) {
-            const cacheKey = query.toLowerCase();
+        function cacheResults(query, topN, page, data, duration, resultsHtml) {
+            const cacheKey = `${query.toLowerCase()}|${topN}|${page}`;
             const cache = useLLM ? resultsCache.llm : resultsCache.standard;
 
             cache[cacheKey] = {
@@ -157,26 +197,29 @@
             console.log(`Cached results for ${useLLM ? 'LLM' : 'standard'} search:`, cacheKey);
         }
 
-        async function searchPlaces() {
+        async function searchPlaces(page = 1) {
             const searchInput = document.getElementById('searchInput');
             const searchBtn = document.getElementById('searchBtn');
             const loadingIndicator = document.getElementById('loadingIndicator');
             const resultsContainer = document.getElementById('resultsContainer');
             const searchInfo = document.getElementById('searchInfo');
             const queryInfo = document.getElementById('queryInfo');
+            const topNSelect = document.getElementById('topNSelect');
 
             const query = searchInput.value.trim();
+            const topN = parseInt(topNSelect.value);
 
             if (!query) {
                 alert('Please enter a search query');
                 return;
             }
 
-            // Update current query
+            // Update current values
             currentQuery = query.toLowerCase();
+            currentPage = page;
 
             // Check cache first
-            const cacheKey = query.toLowerCase();
+            const cacheKey = `${query.toLowerCase()}|${topN}|${page}`;
             const cache = useLLM ? resultsCache.llm : resultsCache.standard;
 
             if (cache[cacheKey]) {
@@ -195,6 +238,7 @@
             resultsContainer.innerHTML = '';
             searchInfo.classList.remove('show');
             queryInfo.style.display = 'none';
+            document.getElementById('paginationContainer').style.display = 'none';
 
             const endpoint = useLLM ? '/find-places-llm' : '/find-places';
 
@@ -204,7 +248,11 @@
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ query: query })
+                    body: JSON.stringify({
+                        query: query,
+                        top_n: topN,
+                        page: page
+                    })
                 });
 
                 if (!response.ok) {
@@ -221,7 +269,7 @@
 
                 // Cache the results
                 const resultsHtml = resultsContainer.innerHTML;
-                cacheResults(query, data, duration, resultsHtml);
+                cacheResults(query, topN, page, data, duration, resultsHtml);
 
                 // Show query processing info only for LLM endpoint
                 if (useLLM && data.original_query && data.processed_query) {
@@ -281,6 +329,11 @@
                         </div>
                     </div>
                 `).join('');
+
+                // Update pagination if available
+                if (data.pagination) {
+                    updatePagination(data.pagination);
+                }
             } else if (data.status === 'ZERO_RESULTS') {
                 resultsContainer.innerHTML = `
                     <div class="no-results">
@@ -288,8 +341,74 @@
                         <p>Try refining your search with different keywords or locations.</p>
                     </div>
                 `;
+                document.getElementById('paginationContainer').style.display = 'none';
             } else {
                 displayError(data.detail || 'No results found for your search.', duration);
+            }
+        }
+
+        function updatePagination(pagination) {
+            currentPagination = pagination;
+            const paginationContainer = document.getElementById('paginationContainer');
+            const paginationInfo = document.getElementById('paginationInfo');
+            const prevBtn = document.getElementById('prevPageBtn');
+            const nextBtn = document.getElementById('nextPageBtn');
+            const pageNumbers = document.getElementById('pageNumbers');
+
+            if (pagination.total_results > 0) {
+                // Show pagination info
+                const startResult = (pagination.current_page - 1) * pagination.results_per_page + 1;
+                const endResult = Math.min(pagination.current_page * pagination.results_per_page, pagination.total_results);
+                paginationInfo.textContent = `Showing ${startResult}-${endResult} of ${pagination.total_results} results`;
+
+                // Update buttons
+                prevBtn.disabled = !pagination.has_prev_page;
+                nextBtn.disabled = !pagination.has_next_page;
+
+                // Generate page numbers
+                generatePageNumbers(pagination);
+
+                paginationContainer.style.display = 'block';
+            } else {
+                paginationContainer.style.display = 'none';
+            }
+        }
+
+        function generatePageNumbers(pagination) {
+            const pageNumbers = document.getElementById('pageNumbers');
+            const totalPages = pagination.total_pages;
+            const currentPage = pagination.current_page;
+
+            let html = '';
+
+            // Show max 5 page numbers with current page in center when possible
+            let startPage = Math.max(1, currentPage - 2);
+            let endPage = Math.min(totalPages, startPage + 4);
+
+            // Adjust start if we're near the end
+            if (endPage - startPage < 4) {
+                startPage = Math.max(1, endPage - 4);
+            }
+
+            for (let i = startPage; i <= endPage; i++) {
+                html += `<button class="page-number ${i === currentPage ? 'active' : ''}" onclick="goToPage(${i})">${i}</button>`;
+            }
+
+            pageNumbers.innerHTML = html;
+        }
+
+        function changePage(direction) {
+            if (!currentPagination) return;
+
+            const newPage = currentPage + direction;
+            if (newPage >= 1 && newPage <= currentPagination.total_pages) {
+                searchPlaces(newPage);
+            }
+        }
+
+        function goToPage(page) {
+            if (page !== currentPage) {
+                searchPlaces(page);
             }
         }
 
