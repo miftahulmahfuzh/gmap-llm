@@ -73,7 +73,18 @@
         .toggle-label {
             font-size: 0.875rem;
             font-weight: 500;
+            color: #6b7280;
+            transition: all 0.3s ease;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .toggle-label.active {
             color: #374151;
+            background: #ffffff;
+            font-weight: 600;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
 
         .toggle-switch {
@@ -401,11 +412,11 @@
         <div class="search-section">
             <div class="search-controls">
                 <div class="toggle-section">
-                    <span class="toggle-label">Standard Search</span>
+                    <span id="standardLabel" class="toggle-label active" onclick="setStandardMode()">Standard Search</span>
                     <div id="llmToggle" class="toggle-switch" onclick="toggleLLM()">
                         <div class="toggle-slider"></div>
                     </div>
-                    <span class="toggle-label">AI Enhanced</span>
+                    <span id="aiLabel" class="toggle-label" onclick="setAIMode()">AI Enhanced</span>
                     <span class="toggle-description">(Compare search performance)</span>
                 </div>
 
@@ -443,13 +454,33 @@
         });
 
         function toggleLLM() {
-            const toggle = document.getElementById('llmToggle');
             useLLM = !useLLM;
+            updateToggleState();
+        }
+
+        function setStandardMode() {
+            useLLM = false;
+            updateToggleState();
+        }
+
+        function setAIMode() {
+            useLLM = true;
+            updateToggleState();
+        }
+
+        function updateToggleState() {
+            const toggle = document.getElementById('llmToggle');
+            const standardLabel = document.getElementById('standardLabel');
+            const aiLabel = document.getElementById('aiLabel');
 
             if (useLLM) {
                 toggle.classList.add('active');
+                standardLabel.classList.remove('active');
+                aiLabel.classList.add('active');
             } else {
                 toggle.classList.remove('active');
+                standardLabel.classList.add('active');
+                aiLabel.classList.remove('active');
             }
         }
 
