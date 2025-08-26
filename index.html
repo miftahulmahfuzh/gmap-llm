@@ -53,13 +53,69 @@
             border: 1px solid #e5e7eb;
         }
 
+        .search-controls {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .toggle-section {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 24px;
+            padding: 16px;
+            background: #f9fafb;
+            border-radius: 6px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .toggle-label {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #374151;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 44px;
+            height: 24px;
+            background: #d1d5db;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .toggle-switch.active {
+            background: #374151;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.3s ease;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .toggle-switch.active .toggle-slider {
+            transform: translateX(20px);
+        }
+
+        .toggle-description {
+            font-size: 0.8rem;
+            color: #6b7280;
+            font-style: italic;
+        }
+
         .search-form {
             display: flex;
             gap: 12px;
             margin-bottom: 20px;
-            max-width: 600px;
-            margin-left: auto;
-            margin-right: auto;
         }
 
         .search-input {
@@ -100,7 +156,7 @@
             cursor: not-allowed;
         }
 
-        .query-info {
+        .search-info {
             text-align: center;
             margin-top: 16px;
             padding: 12px;
@@ -110,14 +166,31 @@
             display: none;
         }
 
-        .query-info.show {
+        .search-info.show {
             display: block;
+        }
+
+        .duration-info {
+            font-size: 0.875rem;
+            color: #374151;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .query-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-top: 8px;
+        }
+
+        .query-original, .query-processed {
+            text-align: left;
         }
 
         .query-original {
             font-size: 0.875rem;
             color: #6b7280;
-            margin-bottom: 4px;
         }
 
         .query-processed {
@@ -288,6 +361,21 @@
                 flex-direction: column;
             }
 
+            .toggle-section {
+                flex-direction: column;
+                text-align: center;
+                gap: 8px;
+            }
+
+            .query-info {
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+
+            .query-original, .query-processed {
+                text-align: center;
+            }
+
             .results-container {
                 grid-template-columns: 1fr;
                 gap: 20px;
@@ -307,22 +395,36 @@
     <div class="container">
         <div class="header">
             <h1>Places Finder</h1>
-            <p>AI-powered location search with intelligent query processing</p>
+            <p>Compare performance with and without AI query processing</p>
         </div>
 
         <div class="search-section">
-            <div class="search-form">
-                <input type="text" id="searchInput" class="search-input" placeholder="What are you looking for? (e.g., best pizza in New York)" />
-                <button id="searchBtn" class="search-btn" onclick="searchPlaces()">Search</button>
-            </div>
+            <div class="search-controls">
+                <div class="toggle-section">
+                    <span class="toggle-label">Standard Search</span>
+                    <div id="llmToggle" class="toggle-switch" onclick="toggleLLM()">
+                        <div class="toggle-slider"></div>
+                    </div>
+                    <span class="toggle-label">AI Enhanced</span>
+                    <span class="toggle-description">(Compare search performance)</span>
+                </div>
 
-            <div id="queryInfo" class="query-info">
-                <div class="query-original">Original: <span id="originalQuery"></span></div>
-                <div class="query-processed">Processed: <span id="processedQuery"></span></div>
-            </div>
+                <div class="search-form">
+                    <input type="text" id="searchInput" class="search-input" placeholder="What are you looking for? (e.g., best pizza in New York)" />
+                    <button id="searchBtn" class="search-btn" onclick="searchPlaces()">Search</button>
+                </div>
 
-            <div id="loadingIndicator" class="loading" style="display: none;">
-                Processing your request...
+                <div id="searchInfo" class="search-info">
+                    <div class="duration-info">Search completed in <span id="searchDuration">0</span> seconds</div>
+                    <div id="queryInfo" class="query-info" style="display: none;">
+                        <div class="query-original">Original Query: <span id="originalQuery"></span></div>
+                        <div class="query-processed">Processed Query: <span id="processedQuery"></span></div>
+                    </div>
+                </div>
+
+                <div id="loadingIndicator" class="loading" style="display: none;">
+                    Processing your request...
+                </div>
             </div>
         </div>
 
@@ -331,6 +433,8 @@
 
     <script>
         const API_BASE_URL = 'http://127.0.0.1:8000';
+        let useLLM = false;
+        let searchStartTime = 0;
 
         document.getElementById('searchInput').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
@@ -338,11 +442,23 @@
             }
         });
 
+        function toggleLLM() {
+            const toggle = document.getElementById('llmToggle');
+            useLLM = !useLLM;
+
+            if (useLLM) {
+                toggle.classList.add('active');
+            } else {
+                toggle.classList.remove('active');
+            }
+        }
+
         async function searchPlaces() {
             const searchInput = document.getElementById('searchInput');
             const searchBtn = document.getElementById('searchBtn');
             const loadingIndicator = document.getElementById('loadingIndicator');
             const resultsContainer = document.getElementById('resultsContainer');
+            const searchInfo = document.getElementById('searchInfo');
             const queryInfo = document.getElementById('queryInfo');
 
             const query = searchInput.value.trim();
@@ -352,15 +468,21 @@
                 return;
             }
 
+            // Start timing
+            searchStartTime = performance.now();
+
             // Show loading state
             searchBtn.disabled = true;
             searchBtn.textContent = 'Processing...';
             loadingIndicator.style.display = 'block';
             resultsContainer.innerHTML = '';
-            queryInfo.classList.remove('show');
+            searchInfo.classList.remove('show');
+            queryInfo.style.display = 'none';
+
+            const endpoint = useLLM ? '/find-places-llm' : '/find-places';
 
             try {
-                const response = await fetch(`${API_BASE_URL}/find-places-llm`, {
+                const response = await fetch(`${API_BASE_URL}${endpoint}`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -373,18 +495,28 @@
                 }
 
                 const data = await response.json();
-                displayResults(data);
 
-                // Show query processing info
-                if (data.original_query && data.processed_query) {
+                // Calculate duration
+                const searchEndTime = performance.now();
+                const duration = ((searchEndTime - searchStartTime) / 1000).toFixed(2);
+
+                displayResults(data, duration);
+
+                // Show query processing info only for LLM endpoint
+                if (useLLM && data.original_query && data.processed_query) {
                     document.getElementById('originalQuery').textContent = data.original_query;
                     document.getElementById('processedQuery').textContent = data.processed_query;
-                    queryInfo.classList.add('show');
+                    queryInfo.style.display = 'grid';
                 }
 
             } catch (error) {
                 console.error('Error:', error);
-                displayError('Failed to fetch places. Please ensure the API server is running and try again.');
+
+                // Calculate duration even for errors
+                const searchEndTime = performance.now();
+                const duration = ((searchEndTime - searchStartTime) / 1000).toFixed(2);
+
+                displayError('Failed to fetch places. Please ensure the API server is running and try again.', duration);
             } finally {
                 // Reset loading state
                 searchBtn.disabled = false;
@@ -393,8 +525,13 @@
             }
         }
 
-        function displayResults(data) {
+        function displayResults(data, duration) {
             const resultsContainer = document.getElementById('resultsContainer');
+            const searchInfo = document.getElementById('searchInfo');
+
+            // Show duration
+            document.getElementById('searchDuration').textContent = duration;
+            searchInfo.classList.add('show');
 
             if (data.status === 'OK' && data.results && data.results.length > 0) {
                 resultsContainer.innerHTML = data.results.map((place, index) => `
@@ -431,12 +568,20 @@
                     </div>
                 `;
             } else {
-                displayError(data.detail || 'No results found for your search.');
+                displayError(data.detail || 'No results found for your search.', duration);
             }
         }
 
-        function displayError(message) {
+        function displayError(message, duration) {
             const resultsContainer = document.getElementById('resultsContainer');
+            const searchInfo = document.getElementById('searchInfo');
+
+            // Show duration even for errors
+            if (duration) {
+                document.getElementById('searchDuration').textContent = duration;
+                searchInfo.classList.add('show');
+            }
+
             resultsContainer.innerHTML = `
                 <div class="error-message">
                     <strong>Error:</strong> ${escapeHtml(message)}
@@ -455,7 +600,7 @@
 
         window.addEventListener('load', function() {
             console.log('Places Finder loaded successfully');
-            console.log('API endpoint: /find-places-llm');
+            console.log('Toggle between standard search and AI-enhanced search to compare performance');
         });
     </script>
 </body>
