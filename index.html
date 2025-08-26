@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🗺️ AI Places Finder</title>
+    <title>Places Finder</title>
     <style>
         * {
             margin: 0;
@@ -12,100 +12,135 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #fafafa;
             min-height: 100vh;
             color: #333;
+            line-height: 1.6;
         }
 
         .container {
             max-width: 1200px;
             margin: 0 auto;
-            padding: 20px;
+            padding: 40px 20px;
         }
 
         .header {
             text-align: center;
-            margin-bottom: 30px;
-            color: white;
+            margin-bottom: 60px;
         }
 
         .header h1 {
-            font-size: 2.5rem;
-            margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            font-size: 2.25rem;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 12px;
+            letter-spacing: -0.025em;
         }
 
         .header p {
-            font-size: 1.1rem;
-            opacity: 0.9;
+            font-size: 1.125rem;
+            color: #666;
+            font-weight: 400;
         }
 
         .search-section {
             background: white;
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            margin-bottom: 30px;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+            margin-bottom: 40px;
+            border: 1px solid #e5e7eb;
         }
 
         .search-form {
             display: flex;
-            gap: 15px;
+            gap: 12px;
             margin-bottom: 20px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
         }
 
         .search-input {
             flex: 1;
-            padding: 15px 20px;
-            border: 2px solid #e0e0e0;
-            border-radius: 10px;
+            padding: 14px 16px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
             font-size: 1rem;
-            transition: border-color 0.3s ease;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+            background: #fff;
         }
 
         .search-input:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: #374151;
+            box-shadow: 0 0 0 3px rgba(55, 65, 81, 0.1);
         }
 
         .search-btn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #374151;
             color: white;
             border: none;
-            padding: 15px 30px;
-            border-radius: 10px;
+            padding: 14px 24px;
+            border-radius: 6px;
             font-size: 1rem;
+            font-weight: 500;
             cursor: pointer;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            transition: background-color 0.2s ease;
+            white-space: nowrap;
         }
 
-        .search-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        .search-btn:hover:not(:disabled) {
+            background: #1f2937;
         }
 
         .search-btn:disabled {
             opacity: 0.6;
             cursor: not-allowed;
-            transform: none;
+        }
+
+        .query-info {
+            text-align: center;
+            margin-top: 16px;
+            padding: 12px;
+            background: #f9fafb;
+            border-radius: 6px;
+            border: 1px solid #e5e7eb;
+            display: none;
+        }
+
+        .query-info.show {
+            display: block;
+        }
+
+        .query-original {
+            font-size: 0.875rem;
+            color: #6b7280;
+            margin-bottom: 4px;
+        }
+
+        .query-processed {
+            font-size: 0.875rem;
+            color: #374151;
+            font-weight: 500;
         }
 
         .loading {
             text-align: center;
-            padding: 20px;
-            color: #667eea;
-            font-size: 1.1rem;
+            padding: 32px;
+            color: #6b7280;
+            font-size: 1rem;
         }
 
         .loading::after {
             content: '';
             display: inline-block;
-            width: 20px;
-            height: 20px;
-            margin-left: 10px;
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #667eea;
+            width: 16px;
+            height: 16px;
+            margin-left: 8px;
+            border: 2px solid #e5e7eb;
+            border-top: 2px solid #374151;
             border-radius: 50%;
             animation: spin 1s linear infinite;
         }
@@ -117,123 +152,153 @@
 
         .results-container {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-            gap: 25px;
-            margin-top: 30px;
+            grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+            gap: 24px;
+            margin-top: 40px;
         }
 
         .place-card {
             background: white;
-            border-radius: 15px;
+            border-radius: 8px;
             overflow: hidden;
-            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+            border: 1px solid #e5e7eb;
+            transition: box-shadow 0.2s ease;
         }
 
         .place-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.06);
         }
 
         .place-header {
-            padding: 20px;
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            color: white;
+            padding: 24px;
+            background: #f9fafb;
+            border-bottom: 1px solid #e5e7eb;
         }
 
         .place-name {
-            font-size: 1.3rem;
-            font-weight: bold;
-            margin-bottom: 10px;
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 8px;
+            line-height: 1.4;
         }
 
         .place-rating {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
+
+        .rating-star {
+            color: #fbbf24;
             font-size: 1rem;
         }
 
-        .stars {
-            color: #ffd700;
-        }
-
         .place-content {
-            padding: 20px;
+            padding: 24px;
         }
 
         .place-address {
-            color: #666;
+            color: #6b7280;
             margin-bottom: 20px;
-            line-height: 1.4;
-            font-size: 0.95rem;
+            line-height: 1.5;
+            font-size: 0.9rem;
         }
 
         .map-container {
-            border-radius: 10px;
+            border-radius: 6px;
             overflow: hidden;
-            margin-bottom: 15px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            border: 1px solid #e5e7eb;
         }
 
         .map-embed {
             width: 100%;
             height: 200px;
             border: none;
-            border-radius: 10px;
         }
 
         .direction-link {
-            display: inline-block;
-            background: #28a745;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #374151;
             color: white;
             text-decoration: none;
-            padding: 10px 20px;
-            border-radius: 8px;
+            padding: 10px 16px;
+            border-radius: 6px;
             font-weight: 500;
-            transition: background-color 0.3s ease, transform 0.2s ease;
+            font-size: 0.875rem;
+            transition: background-color 0.2s ease;
         }
 
         .direction-link:hover {
-            background: #218838;
-            transform: translateY(-1px);
+            background: #1f2937;
         }
 
         .error-message {
-            background: #f8d7da;
-            color: #721c24;
-            padding: 15px 20px;
-            border-radius: 10px;
-            border: 1px solid #f5c6cb;
-            margin-top: 20px;
+            background: #fef2f2;
+            color: #991b1b;
+            padding: 16px 20px;
+            border-radius: 6px;
+            border: 1px solid #fecaca;
+            margin-top: 24px;
+            font-size: 0.9rem;
         }
 
         .no-results {
             text-align: center;
-            color: #666;
-            font-size: 1.1rem;
-            margin-top: 30px;
-            padding: 40px;
+            color: #6b7280;
+            font-size: 1rem;
+            margin-top: 40px;
+            padding: 48px 24px;
             background: white;
-            border-radius: 15px;
-            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+            border: 1px solid #e5e7eb;
+        }
+
+        .no-results h3 {
+            color: #374151;
+            font-weight: 600;
+            margin-bottom: 8px;
         }
 
         @media (max-width: 768px) {
             .container {
-                padding: 15px;
+                padding: 20px 16px;
             }
-            
+
+            .header {
+                margin-bottom: 40px;
+            }
+
             .header h1 {
                 font-size: 2rem;
             }
-            
+
+            .search-section {
+                padding: 24px;
+            }
+
             .search-form {
                 flex-direction: column;
             }
-            
+
             .results-container {
                 grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .place-header {
+                padding: 20px;
+            }
+
+            .place-content {
+                padding: 20px;
             }
         }
     </style>
@@ -241,18 +306,23 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>🗺️ AI Places Finder</h1>
-            <p>Ask me to find places like 'best coffee in Brooklyn' and I'll show you a map!</p>
+            <h1>Places Finder</h1>
+            <p>AI-powered location search with intelligent query processing</p>
         </div>
 
         <div class="search-section">
             <div class="search-form">
                 <input type="text" id="searchInput" class="search-input" placeholder="What are you looking for? (e.g., best pizza in New York)" />
-                <button id="searchBtn" class="search-btn" onclick="searchPlaces()">Find Places</button>
+                <button id="searchBtn" class="search-btn" onclick="searchPlaces()">Search</button>
             </div>
-            
+
+            <div id="queryInfo" class="query-info">
+                <div class="query-original">Original: <span id="originalQuery"></span></div>
+                <div class="query-processed">Processed: <span id="processedQuery"></span></div>
+            </div>
+
             <div id="loadingIndicator" class="loading" style="display: none;">
-                Searching for places...
+                Processing your request...
             </div>
         </div>
 
@@ -260,10 +330,8 @@
     </div>
 
     <script>
-        // Store the API base URL - adjust this to match your FastAPI server
         const API_BASE_URL = 'http://127.0.0.1:8000';
 
-        // Handle Enter key press in search input
         document.getElementById('searchInput').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 searchPlaces();
@@ -275,22 +343,24 @@
             const searchBtn = document.getElementById('searchBtn');
             const loadingIndicator = document.getElementById('loadingIndicator');
             const resultsContainer = document.getElementById('resultsContainer');
+            const queryInfo = document.getElementById('queryInfo');
 
             const query = searchInput.value.trim();
-            
+
             if (!query) {
-                alert('Please enter a search query!');
+                alert('Please enter a search query');
                 return;
             }
 
             // Show loading state
             searchBtn.disabled = true;
-            searchBtn.textContent = 'Searching...';
+            searchBtn.textContent = 'Processing...';
             loadingIndicator.style.display = 'block';
             resultsContainer.innerHTML = '';
+            queryInfo.classList.remove('show');
 
             try {
-                const response = await fetch(`${API_BASE_URL}/find-places`, {
+                const response = await fetch(`${API_BASE_URL}/find-places-llm`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -305,13 +375,20 @@
                 const data = await response.json();
                 displayResults(data);
 
+                // Show query processing info
+                if (data.original_query && data.processed_query) {
+                    document.getElementById('originalQuery').textContent = data.original_query;
+                    document.getElementById('processedQuery').textContent = data.processed_query;
+                    queryInfo.classList.add('show');
+                }
+
             } catch (error) {
                 console.error('Error:', error);
-                displayError('Failed to fetch places. Please make sure the API server is running and try again.');
+                displayError('Failed to fetch places. Please ensure the API server is running and try again.');
             } finally {
                 // Reset loading state
                 searchBtn.disabled = false;
-                searchBtn.textContent = 'Find Places';
+                searchBtn.textContent = 'Search';
                 loadingIndicator.style.display = 'none';
             }
         }
@@ -325,14 +402,14 @@
                         <div class="place-header">
                             <div class="place-name">${escapeHtml(place.name)}</div>
                             <div class="place-rating">
-                                <span class="stars">⭐</span>
-                                <span>${place.rating || 'N/A'}</span>
+                                <span class="rating-star">★</span>
+                                <span>${place.rating || 'No rating'}</span>
                             </div>
                         </div>
                         <div class="place-content">
                             <div class="place-address">${escapeHtml(place.address)}</div>
                             <div class="map-container">
-                                <iframe 
+                                <iframe
                                     class="map-embed"
                                     src="${place.maps_embed_url}"
                                     allowfullscreen
@@ -340,7 +417,8 @@
                                 </iframe>
                             </div>
                             <a href="${place.maps_direction_url}" target="_blank" class="direction-link">
-                                Get Directions 🚗
+                                <span>Get Directions</span>
+                                <span>→</span>
                             </a>
                         </div>
                     </div>
@@ -349,7 +427,7 @@
                 resultsContainer.innerHTML = `
                     <div class="no-results">
                         <h3>No results found</h3>
-                        <p>Try searching with different keywords or a different location.</p>
+                        <p>Try refining your search with different keywords or locations.</p>
                     </div>
                 `;
             } else {
@@ -375,10 +453,9 @@
                 .replace(/'/g, "&#039;");
         }
 
-        // Demo functionality - you can remove this
         window.addEventListener('load', function() {
-            console.log('Places Finder loaded successfully!');
-            console.log('Make sure your FastAPI server is running on http://127.0.0.1:8000');
+            console.log('Places Finder loaded successfully');
+            console.log('API endpoint: /find-places-llm');
         });
     </script>
 </body>
