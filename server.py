@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """
+File: gmap-llm/server.py
 Simple HTTP server to serve the HTML frontend for the AI Places Finder.
 Run this alongside your FastAPI backend server.
 """
@@ -8,7 +9,6 @@ import http.server
 import socketserver
 import os
 import webbrowser
-from pathlib import Path
 
 # Configuration
 PORT = 3000
@@ -39,11 +39,11 @@ def main():
 
     # Create the server
     with socketserver.TCPServer(("", PORT), CORSHTTPRequestHandler) as httpd:
-        print(f"🌐 Starting HTML server...")
+        print("🌐 Starting HTML server...")
         print(f"📂 Serving directory: {os.getcwd()}")
         print(f"🔗 Server running at: http://localhost:{PORT}")
         print(f"📱 Frontend URL: http://localhost:{PORT}/index.html")
-        print(f"🗺️  Make sure your FastAPI server is running on http://127.0.0.1:8000")
+        print("🗺️  Make sure your FastAPI server is running on http://127.0.0.1:8000")
         print("\n⚡ To stop the server, press Ctrl+C")
         print("-" * 60)
 
