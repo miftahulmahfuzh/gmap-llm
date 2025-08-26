@@ -46,19 +46,6 @@
         <div id="resultsContainer" class="results-container"></div>
 
         <div id="paginationContainer" class="pagination-container" style="display: none;">
-            <div class="results-per-page">
-                <label for="topNSelect" class="results-per-page-label">Show</label>
-                <select id="topNSelect" class="top-n-select">
-                    <option value="5">5</option>
-                    <option value="10">10</option>
-                    <option value="15">15</option>
-                    <option value="20">20</option>
-                    <option value="30">30</option>
-                    <option value="60">60</option>
-                </select>
-                <span class="results-per-page-suffix">items per page</span>
-            </div>
-
             <div class="pagination-info">
                 <span id="paginationInfo">Showing 1-5 of 15 results</span>
             </div>
@@ -90,17 +77,11 @@
             }
         });
 
-        // Clear cache when query or top_n changes
+        // Clear cache when query changes
         document.getElementById('searchInput').addEventListener('input', function(e) {
             const newQuery = e.target.value.trim().toLowerCase();
             if (newQuery !== currentQuery) {
                 currentQuery = newQuery;
-                clearResults();
-            }
-        });
-
-        document.getElementById('topNSelect').addEventListener('change', function(e) {
-            if (currentQuery) {
                 clearResults();
             }
         });
@@ -153,10 +134,9 @@
 
         function loadCachedResultsIfAvailable() {
             const query = document.getElementById('searchInput').value.trim();
-            const topN = document.getElementById('topNSelect').value;
             if (!query) return;
 
-            const cacheKey = `${query.toLowerCase()}|${topN}|${currentPage}`;
+            const cacheKey = `${query.toLowerCase()}|10|${currentPage}`;
             const cache = useLLM ? resultsCache.llm : resultsCache.standard;
 
             if (cache[cacheKey]) {
@@ -187,8 +167,8 @@
             }
         }
 
-        function cacheResults(query, topN, page, data, duration, resultsHtml) {
-            const cacheKey = `${query.toLowerCase()}|${topN}|${page}`;
+        function cacheResults(query, page, data, duration, resultsHtml) {
+            const cacheKey = `${query.toLowerCase()}|10|${page}`;
             const cache = useLLM ? resultsCache.llm : resultsCache.standard;
 
             cache[cacheKey] = {
@@ -207,10 +187,9 @@
             const resultsContainer = document.getElementById('resultsContainer');
             const searchInfo = document.getElementById('searchInfo');
             const queryInfo = document.getElementById('queryInfo');
-            const topNSelect = document.getElementById('topNSelect');
 
             const query = searchInput.value.trim();
-            const topN = parseInt(topNSelect.value);
+            const topN = 10; // Fixed at 10 results per page
 
             if (!query) {
                 alert('Please enter a search query');
@@ -222,7 +201,7 @@
             currentPage = page;
 
             // Check cache first
-            const cacheKey = `${query.toLowerCase()}|${topN}|${page}`;
+            const cacheKey = `${query.toLowerCase()}|10|${page}`;
             const cache = useLLM ? resultsCache.llm : resultsCache.standard;
 
             if (cache[cacheKey]) {
@@ -272,7 +251,7 @@
 
                 // Cache the results
                 const resultsHtml = resultsContainer.innerHTML;
-                cacheResults(query, topN, page, data, duration, resultsHtml);
+                cacheResults(query, page, data, duration, resultsHtml);
 
                 // Show query processing info only for LLM endpoint
                 if (useLLM && data.original_query && data.processed_query) {
