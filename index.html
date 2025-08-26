@@ -26,17 +26,7 @@
 
                 <div class="search-form">
                     <input type="text" id="searchInput" class="search-input" placeholder="What are you looking for? (e.g., best pizza in New York)" />
-                    <div class="form-controls">
-                        <select id="topNSelect" class="top-n-select">
-                            <option value="5">Top 5</option>
-                            <option value="10">Top 10</option>
-                            <option value="15">Top 15</option>
-                            <option value="20">Top 20</option>
-                            <option value="30">Top 30</option>
-                            <option value="60">Top 60</option>
-                        </select>
-                        <button id="searchBtn" class="search-btn" onclick="searchPlaces()">Search</button>
-                    </div>
+                    <button id="searchBtn" class="search-btn" onclick="searchPlaces()">Search</button>
                 </div>
 
                 <div id="searchInfo" class="search-info">
@@ -56,6 +46,19 @@
         <div id="resultsContainer" class="results-container"></div>
 
         <div id="paginationContainer" class="pagination-container" style="display: none;">
+            <div class="results-per-page">
+                <label for="topNSelect" class="results-per-page-label">Show</label>
+                <select id="topNSelect" class="top-n-select">
+                    <option value="5">5</option>
+                    <option value="10">10</option>
+                    <option value="15">15</option>
+                    <option value="20">20</option>
+                    <option value="30">30</option>
+                    <option value="60">60</option>
+                </select>
+                <span class="results-per-page-suffix">items per page</span>
+            </div>
+
             <div class="pagination-info">
                 <span id="paginationInfo">Showing 1-5 of 15 results</span>
             </div>
