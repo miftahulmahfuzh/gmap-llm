@@ -151,15 +151,27 @@ gmap-llm/
 ```
 
 ## API Endpoints
-
 The FastAPI backend provides the following endpoints:
+- **POST `/find-places`**: Standard search endpoint that queries Google Places API directly
+ - Request body: `{"query": "your search query", "top_n": 10, "page": 1}`
+ - Returns: JSON with place information, pagination metadata, and search duration
+- **POST `/find-places-llm`**: AI-enhanced search endpoint that preprocesses queries using LLM before searching
+ - Request body: `{"query": "your search query", "top_n": 10, "page": 1}`
+ - Returns: JSON with place information, pagination metadata, original/processed queries, and search duration
+- **GET `/`**: Root endpoint with API status and available endpoints information
+- **GET `/health`**: Health check endpoint for monitoring API availability
 
-- **POST `/find-places`**: Main endpoint for searching places
-  - Request body: `{"query": "your search query"}`
-  - Returns: JSON with place information including embedded map URLs
+### Request Parameters
+- `query` (required): Natural language search query
+- `top_n` (optional): Number of results per page (1-60, default: 5)
+- `page` (optional): Page number for pagination (default: 1)
 
-- **GET `/`**: Root endpoint with API status
-- **GET `/health`**: Health check endpoint
+### Response Format
+Both endpoints return structured JSON containing:
+- Place details (name, address, rating, Google Maps URLs)
+- Pagination information (current page, total results, navigation flags)
+- Performance metrics (search duration)
+- Query processing details (LLM endpoint only)
 
 ## Usage
 
