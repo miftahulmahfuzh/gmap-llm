@@ -17,11 +17,21 @@ This project demonstrates how to build a powerful, interactive web application t
 -   **Modern Web Interface**: Clean, responsive design that works on desktop and mobile devices.
 
 ## How It Works
-
-1.  The user types a request into the **HTML** frontend.
-2.  The frontend sends the request directly to the **FastAPI** backend API.
-3.  The FastAPI server securely uses the **Google Maps API** to find places, then returns the results as structured JSON data.
-4.  The HTML frontend receives this JSON data and displays it in beautiful cards with embedded maps and direction links.
+1. **User Input**: The user types a natural language request into the HTML frontend (e.g., "best pizza in Brooklyn").
+2. **Search Mode Selection**: The user chooses between:
+  - **Standard Search**: Direct query to Google Places API
+  - **AI Enhanced Search**: LLM preprocesses the query for better results
+3. **Backend Processing**:
+  - **Standard Mode** (`/find-places`): FastAPI sends the original query directly to Google Maps API
+  - **AI Enhanced Mode** (`/find-places-llm`): FastAPI first sends the query to the LLM (DeepSeek) to optimize it, then searches Google Maps with the improved query
+4. **Data Retrieval**: The backend fetches up to 60 results from Google Places API with pagination support (10 results per page)
+5. **Response & Caching**: The frontend receives structured JSON data including:
+  - Place information (name, address, rating, maps links)
+  - Pagination metadata
+  - Query processing details (for AI mode)
+  - Search duration metrics
+6. **Display & Navigation**: Results are displayed in interactive cards with embedded maps, and users can navigate through pages while comparing performance between search modes
+7. **Smart Caching**: Results are cached client-side for instant comparison when toggling between Standard and AI Enhanced modes
 
 ---
 
